@@ -43,12 +43,24 @@ class LLMProvider(Protocol):
         """Return the model's raw text response (expected to be a JSON object)."""
 
 
+_CATEGORY_PROMPTS = (
+    "category_security.txt",
+    "category_bug.txt",
+    "category_performance.txt",
+    "category_test_coverage.txt",
+)
+
+
 def load_prompt(name: str) -> str:
     return (_PROMPT_DIR / name).read_text(encoding="utf-8")
 
 
 def system_prompt() -> str:
-    return load_prompt("system.txt")
+    """Assembled from one common-instructions file plus one file per review category
+    (security, bug, performance, test coverage), so each category's checklist can be
+    edited independently of the shared framing/output-format instructions."""
+    checklists = "\n\n".join(load_prompt(name).strip() for name in _CATEGORY_PROMPTS)
+    return load_prompt("common_review.txt").replace("__CATEGORY_CHECKLISTS__", checklists)
 
 
 def user_prompt(*, context: str, target_file: str, pr_id, repo: str,

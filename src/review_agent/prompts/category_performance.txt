@@ -1,0 +1,23 @@
+PERFORMANCE — look for
+EFFECT IF MISSED: a breached SLA (e.g. settlement windows), a missed EOD/interest-
+accrual batch window, or a trivially DoS-able endpoint -- all financial-loss and
+customer-impact risks.
+
+LOOK FOR (OWASP ASVS V11 / API4:2023 Unrestricted Resource Consumption)
+- N+1 queries or missing eager fetch/batching on account/transaction/statement paths.
+- Unbounded loops/recursion/collection growth (loading a full account history or
+  table into memory instead of paging/streaming).
+- Missing pagination or result-size cap on a transaction-history or statement API.
+- Expensive work in hot paths/loops (regex compilation, reflection, expensive log
+  string-building, repeated DB/network calls that could be cached or batched).
+- Algorithmic complexity regressions (e.g. O(n^2) where O(n) was achievable).
+- Synchronous/blocking external call (payment gateway, core banking) on a request
+  thread with no timeout or circuit breaker.
+- Lock/row contention on shared ledger/account rows under concurrent transfer volume.
+
+KNOWN ISSUES IN BANKING SYSTEMS
+- Transaction-history endpoint with no page size limit.
+- EOD/interest-accrual batch processing accounts row-by-row instead of in batches.
+- External payment-gateway/core-banking call with no timeout, retry budget, or
+  circuit breaker.
+- Account-balance lookup with no caching/rate limit -> thundering-herd risk.

@@ -1,0 +1,26 @@
+BUG — look for
+EFFECT IF MISSED: a direct monetary loss (wrong balance, wrong interest/fee,
+duplicated/lost transaction) or a reconciliation break treated as a SOX/internal-
+controls failure.
+
+LOOK FOR (OWASP ASVS V5/V7 data-handling & business-logic)
+- Monetary arithmetic: double/float instead of BigDecimal; unspecified/wrong rounding
+  mode; scale or currency mismatch between compared/added/persisted amounts.
+- Logic errors: off-by-one on interest-accrual or statement-period ranges, inverted
+  conditionals, wrong operator, incorrect loop bounds.
+- Null/empty handling: missing null checks, Optional misuse, NPE risk on changed
+  lines.
+- State handling: shared/cached-state mutation, stale balance reads, broken
+  equals/hashCode, unclosed resource (missing try-with-resources).
+- API contract: a return/exception change that no longer matches callers; a
+  @Transactional boundary no longer wrapping every write (partial commit risk).
+
+KNOWN ISSUES IN BANKING SYSTEMS
+- Duplicate transaction on a client/network retry to a non-idempotent endpoint.
+- Debit/credit legs of a transfer committed as separate transactions -> unbalanced
+  ledger on partial failure.
+- Reversal/refund that doesn't unwind associated fees/interest/points.
+- Timezone/DST bugs in EOD or interest-accrual batch logic.
+- Currency conversion with a stale rate, or fee-deduction order inconsistent with
+  other code paths.
+- Check-then-act race between balance check and debit -> overdraft past limit.

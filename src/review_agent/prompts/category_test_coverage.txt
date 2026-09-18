@@ -1,0 +1,25 @@
+TESTING — look for
+EFFECT IF MISSED: an untested path becomes a monetary-loss or compliance incident
+discovered in production instead of a caught defect -- a reportable, regulatory-
+control-failure event.
+
+LOOK FOR (OWASP ASVS V1/V7 verification & business-logic testing)
+- New/changed logic (branching, error handling, edge cases) with no test change in
+  the provided context.
+- Tests weakened or removed without an equivalent replacement.
+- Assertions that don't verify behavior (mock-invocation-only, none at all, or an
+  overly broad try/catch swallowing failures).
+- Missing coverage for the failure/exception path, not just the happy path.
+- Only report a TESTING finding when it's evidenced by what's in the provided
+  context -- do not assume a test file exists elsewhere.
+
+KNOWN ISSUES IN BANKING SYSTEMS
+- Transfer/payment change with only a happy-path test: no insufficient-funds,
+  duplicate-request, or concurrent-transfer test.
+- No test asserting an audit-log entry for a financial transaction or sensitive
+  data access.
+- No test for the negative authorization case (cross-account/cross-customer access
+  rejected).
+- No test for boundary amounts (zero, negative, currency-minor unit, max value) or
+  currency mismatch.
+- No test for idempotent retry behavior on a payment/transfer endpoint.

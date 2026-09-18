@@ -1,0 +1,31 @@
+SECURITY — look for
+EFFECT IF MISSED: a data breach, account takeover, or fund theft, plus a PCI-DSS/GDPR/
+supervisor reporting obligation and fines. Default to CRITICAL/HIGH unless the exploit
+path is clearly unreachable.
+
+LOOK FOR (OWASP Top 10 2021 / ASVS / API Security Top 10)
+- A01 Broken Access Control: missing @PreAuthorize; IDOR on account/card/transaction
+  IDs; missing customer/tenant scoping in a query.
+- A02 Cryptographic Failures: PAN/CVV/PIN/SSN/account number in plaintext (storage,
+  logs, or API response); weak hashing (MD5/SHA-1); hardcoded keys; insecure
+  randomness for tokens/OTPs.
+- A03 Injection: SQL/JPQL/OS-command/template injection from unsanitized input.
+- A04 Insecure Design: payment/transfer endpoint with no idempotency key, velocity
+  limit, or maker-checker control on high-value operations.
+- A05 Security Misconfiguration: exposed actuator endpoints, verbose stack traces,
+  default credentials, permissive CORS on payment/account APIs.
+- A06 Vulnerable Components: a dependency bump introducing a known CVE (if evidenced).
+- A07 Auth Failures: missing MFA/step-up auth on high-risk actions, JWT alg=none or
+  unverified signature, predictable reset/OTP tokens.
+- A08 Data Integrity Failures: unvalidated deserialization; unsigned transaction
+  payloads.
+- A09 Logging Failures: no audit log for money movement; PAN/CVV/PII in logs.
+- A10 SSRF: outbound call built from user-controlled URL (e.g. webhook callback).
+
+KNOWN ISSUES IN BANKING SYSTEMS
+- CVV ever persisted or logged. Unmasked PAN/account number in a response or log.
+- Balance-check-then-debit as two non-atomic steps (TOCTOU) -> overdraft/double-spend.
+- Missing idempotency key on payment/transfer/refund -> retry duplicates a transaction.
+- Predictable OTP/reference/reset token (non-cryptographic RNG or short format).
+- Authorization derived from the request DTO's account field instead of the
+  authenticated principal (IDOR in transfer APIs).
