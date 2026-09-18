@@ -144,8 +144,15 @@ def _run_judge(provider, kept: List[Finding], pr_info: PRInfo, repo_slug: str,
     duplicates, correlates the same root cause across files, and drops any finding
     whose evidence doesn't hold up. Falls back to the mechanical dedup on failure --
     the judge refines the findings, it never gates the review on its own availability.
+
+    Only the context for files that still have a candidate finding is sent -- the
+    judge verifies evidence and correlates root causes, it has no use for the full
+    docs/rules/code context of a changed file nothing was raised on, and that context
+    is often the bulk of the token cost of this call.
     """
-    context = "\n\n".join(f"--- {file} ---\n{text}" for file, text in file_inputs.items())
+    relevant_files = {f.file for f in kept}
+    context = "\n\n".join(f"--- {file} ---\n{text}" for file, text in file_inputs.items()
+                          if file in relevant_files)
     system = judge_prompts.system_prompt()
     user = judge_prompts.user_prompt(findings=kept, context=context, pr_id=pr_info.id,
                                      repo=repo_slug, target_branch=pr_info.target_branch,

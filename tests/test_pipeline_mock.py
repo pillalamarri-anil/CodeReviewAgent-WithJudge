@@ -115,6 +115,36 @@ def test_run_includes_judge_tokens_in_total(monkeypatch, sample_repo, diff):
     )
 
 
+def test_judge_context_only_includes_files_with_surviving_findings():
+    """Token-cost fix: the judge should only see the rendered context of files that
+    still have a candidate finding, not every changed file (most of which the judge
+    has no use for -- see pipeline._run_judge's docstring)."""
+    from review_agent.context.models import PRInfo
+    from review_agent.llm.mock import MockProvider
+    from review_agent.models import Category, Finding, Severity
+
+    finding = Finding(
+        severity=Severity.HIGH, category=Category.SECURITY, file="A.java", line=10,
+        title="issue", description="d", impact="i", recommendation="r",
+        evidence="bad code", confidence=0.9,
+    )
+    file_inputs = {
+        "A.java": "MARKER_A bad code here",
+        "B.java": "MARKER_B totally unrelated context with no findings on it",
+    }
+    provider = MockProvider(raw=json.dumps({
+        "summary": "ok", "findings": [finding.model_dump(mode="json")], "dropped": [],
+    }))
+    pr_info = PRInfo(id=1, title="", description="", source_branch="feat/x", target_branch="main")
+
+    pipeline_mod._run_judge(provider, [finding], pr_info, "org/repo", file_inputs)
+
+    assert len(provider.calls) == 1
+    _, user_prompt = provider.calls[0]
+    assert "MARKER_A" in user_prompt
+    assert "MARKER_B" not in user_prompt
+
+
 def test_run_passes_when_clean(monkeypatch, sample_repo, diff):
     _patch_provider(monkeypatch, {})  # mock returns no findings
     report = run(_settings(), RunInputs(
