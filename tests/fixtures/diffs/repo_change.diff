@@ -1,0 +1,10 @@
+diff --git a/src/main/java/com/example/repository/OrderRepository.java b/src/main/java/com/example/repository/OrderRepository.java
+index 3333333..4444444 100644
+--- a/src/main/java/com/example/repository/OrderRepository.java
++++ b/src/main/java/com/example/repository/OrderRepository.java
+@@ -15,2 +15,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
+     List<Order> findByCustomerId(long customerId);
++
++    @Query(value = "SELECT * FROM orders WHERE status = '" + "NEW" + "'", nativeQuery = true)
++    List<Order> findNewOrders();
+ }

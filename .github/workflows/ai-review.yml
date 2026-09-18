@@ -1,0 +1,76 @@
+# Copy this file into the SAMPLE REPO at .github/workflows/ai-review.yml
+#
+# It checks out the sample repo + this agent, runs the review against the real PR
+# diff, posts inline + summary comments, and fails the check on a quality-gate breach.
+#
+# Required repo secrets:  OPENAI_API_KEY   (OPENAI_MODEL, OPENAI_BASE_URL optional)
+# Required repo variable:  AI_REVIEW_AGENT_REPO   e.g. "your-org/review-agent"
+#                          AI_REVIEW_AGENT_REF    e.g. "main"  (optional, defaults to main)
+
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout review agent
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.AI_REVIEW_AGENT_REPO }}
+          ref: ${{ vars.AI_REVIEW_AGENT_REF || 'main' }}
+          path: .review-agent
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install agent
+        run: pip install ./.review-agent
+
+      - name: Provide knowledge overlay if the repo lacks docs/
+        run: |
+          if [ ! -f review-rules.yaml ] && [ -d .review-agent/overlay ]; then
+            cp -r .review-agent/overlay/. .
+            echo "overlay applied"
+          fi
+
+      - name: Run AI review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          LLM_PROVIDER: openai
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL || 'gpt-4o' }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+        run: |
+          python -m review_agent \
+            --repo . \
+            --pr "${{ github.event.pull_request.number }}" \
+            --base "${{ github.base_ref }}" \
+            --head "${{ github.event.pull_request.head.ref }}" \
+            --commit "${{ github.event.pull_request.head.sha }}" \
+            --overlay .review-agent/overlay \
+            --report review-report.json \
+            --status-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --publish
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-review-report
+          path: review-report.json

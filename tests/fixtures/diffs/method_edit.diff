@@ -1,0 +1,14 @@
+diff --git a/src/main/java/com/example/service/OrderService.java b/src/main/java/com/example/service/OrderService.java
+index 1111111..2222222 100644
+--- a/src/main/java/com/example/service/OrderService.java
++++ b/src/main/java/com/example/service/OrderService.java
+@@ -17,3 +17,8 @@ public class OrderService {
+     public BigDecimal totalForCustomer(long customerId, List<Long> orderIds) {
+-        return orderRepository.totalByCustomer(customerId);
++        BigDecimal total = BigDecimal.ZERO;
++        for (Long id : orderIds) {
++            Order order = orderRepository.findById(id).orElseThrow();
++            total = total.add(order.getAmount());
++        }
++        return total;
+     }

@@ -1,0 +1,5 @@
+# Review invariants for the sample repo -- passed to the model verbatim
+- Monetary values use BigDecimal, never double or float
+- Repository access goes through a service, never a controller
+- Spring Data repository interfaces are annotated with @Repository
+- No string-concatenated JPQL or SQL; use bound parameters

@@ -1,0 +1,6 @@
+# Review invariants for BookMyShow -- passed through to the model verbatim
+- Controllers must not call repositories directly; go through a service
+- Monetary values use BigDecimal, never double or float
+- Every @RestController method enforces authorization
+- Spring Data repository interfaces are annotated with @Repository
+- Entities must not expose a public setter for their primary key
